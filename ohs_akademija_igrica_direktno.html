@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OHS Akademija – kombinovana HTML igrica</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eef5ff,#f9fbff);color:#1f2a44;padding:24px}
+    .container{max-width:1220px;margin:0 auto;background:#fff;border-radius:22px;box-shadow:0 14px 36px rgba(0,0,0,.12);padding:24px}
+    h1{margin:0 0 8px;text-align:center;font-size:2rem}
+    .subtitle{text-align:center;color:#5d6b82;line-height:1.6;margin-bottom:20px}
+    .topbar{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;margin-bottom:20px}
+    .stat{flex:1 1 180px;background:#f2f7ff;border:1px solid #d7e4ff;border-radius:14px;padding:12px 14px;text-align:center;font-weight:bold}
+    .screen{display:none}.screen.active{display:block}
+    .layout{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+    .room-card,.side-card{background:#fbfdff;border:2px solid #d8e6ff;border-radius:18px;padding:18px}
+    .room-title{font-size:1.2rem;font-weight:bold;color:#26456c;margin-bottom:12px;text-align:center}
+    .room-svg{width:100%;display:block;background:#eef5ff;border-radius:14px}
+    .task-list{margin:0;padding-left:20px;line-height:1.85;color:#44536a}
+    .task-list li.done{color:#14723d;font-weight:bold}
+    .task-box{display:none;margin-top:16px;background:#f7fbff;border:1px solid #d8e6ff;border-radius:16px;padding:16px}
+    .task-box.active{display:block}
+    .question{font-size:1.08rem;font-weight:bold;color:#27456d;margin-bottom:12px;line-height:1.55}
+    .options{display:grid;gap:10px}
+    .option-btn,.main-btn,.digit-btn{border:none;border-radius:14px;padding:14px 15px;font-size:1rem;font-weight:bold;cursor:pointer;transition:transform .15s ease, box-shadow .15s ease}
+    .option-btn{background:#e8f2ff;color:#183a67;text-align:left}
+    .option-btn:hover:not(:disabled),.main-btn:hover,.digit-btn:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(0,0,0,.12)}
+    .option-btn:disabled,.digit-btn:disabled{opacity:.85;cursor:not-allowed}
+    .main-btn{background:#2d6cdf;color:#fff}
+    .secondary{background:#5d6b82;color:#fff}
+    .message{margin-top:14px;background:#eef7ff;color:#29486d;padding:14px;border-radius:12px;min-height:100px;line-height:1.6}
+    .feedback{margin-top:12px;font-weight:bold;line-height:1.6}
+    .correct{color:#14723d}.wrong{color:#b3261e}
+    .hotspot{fill:rgba(255,0,0,0);stroke:rgba(255,0,0,0);stroke-width:3;cursor:pointer;transition:fill .2s ease, stroke .2s ease}
+    .hotspot:hover{fill:rgba(255,193,7,.18);stroke:rgba(255,152,0,.75)}
+    .hotspot.done{fill:rgba(46,204,113,.22);stroke:rgba(18,138,67,.9);pointer-events:none}
+    .pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .pair-card{background:#eef6ff;border-radius:12px;padding:12px;text-align:center;color:#28476f;font-weight:bold}
+    .chain{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:12px}
+    .chain-step{background:#eef6ff;color:#28476f;border-radius:14px;padding:12px 14px;min-width:130px;text-align:center;font-weight:bold;border:1px solid #d8e6ff}
+    .arrow{font-size:1.3rem;font-weight:bold;color:#5f7696}
+    .code-display{text-align:center;font-size:1.35rem;letter-spacing:6px;background:#f7fbff;border:1px solid #d8e6ff;border-radius:12px;padding:12px;min-height:48px;margin-bottom:12px}
+    .mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    .digit-btn{background:#eaf3ff;color:#173b68}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    .result-box{text-align:center;background:#fbfdff;border:2px solid #d8e6ff;border-radius:18px;padding:26px}
+    .rank-box{margin-top:18px;background:#f7fbff;border:1px solid #d8e6ff;border-radius:16px;padding:18px}
+    .rank-list{margin:0;padding-left:22px;text-align:left;line-height:1.8;color:#46566d}
+    .legend{text-align:center;color:#607089;font-size:.95rem;margin-top:10px}
+    @media(max-width:980px){.layout{grid-template-columns:1fr}.mini-grid{grid-template-columns:repeat(3,1fr)}.pair-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 OHS AKADEMIJA – KOMBINOVANA HTML IGRICA</h1>
+    <p class="subtitle">Finalna direktno igriva verzija koja spaja: hidden hazards, decision-based scenario, matching logiku, procenu rizika, myth-busting, simulaciju posledica i escape završnicu.</p>
+
+    <div class="topbar">
+      <div class="stat">Zadaci: <span id="doneCount">0</span> / 7</div>
+      <div class="stat">Poeni: <span id="score">0</span></div>
+      <div class="stat">Status: <span id="statusText">U toku</span></div>
+      <div class="stat">Bez tajmera ✅</div>
+    </div>
+
+    <div id="gameScreen" class="screen active">
+      <div class="layout">
+        <div class="room-card">
+          <div class="room-title">Laboratorija / radionica – centralna scena</div>
+          <svg class="room-svg" viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1000" height="620" fill="#eaf3ff"/>
+            <rect y="430" width="1000" height="190" fill="#d7d2cb"/>
+            <rect x="0" y="0" width="1000" height="90" fill="#d8e9ff"/>
+            <rect x="60" y="80" width="170" height="125" rx="10" fill="#c8def6" stroke="#9ab8d8" stroke-width="4"/>
+            <line x1="145" y1="80" x2="145" y2="205" stroke="#9ab8d8" stroke-width="4"/>
+            <line x1="60" y1="142" x2="230" y2="142" stroke="#9ab8d8" stroke-width="4"/>
+            <rect x="205" y="300" width="560" height="24" rx="10" fill="#8b5f3d"/>
+            <rect x="230" y="324" width="26" height="110" fill="#765137"/>
+            <rect x="714" y="324" width="26" height="110" fill="#765137"/>
+            <rect x="270" y="252" width="44" height="48" rx="6" fill="#8fd3ff" stroke="#548cb5" stroke-width="3"/>
+            <rect x="278" y="240" width="28" height="12" rx="4" fill="#548cb5"/>
+            <rect x="355" y="240" width="42" height="60" rx="6" fill="#f5c16c" stroke="#b78427" stroke-width="3"/>
+            <rect x="365" y="224" width="22" height="18" rx="4" fill="#b78427"/>
+            <circle cx="417" cy="237" r="10" fill="#8b5e3c"/>
+            <path d="M480 345 C 460 320, 510 300, 550 320 C 575 334, 580 368, 540 380 C 510 390, 465 380, 480 345 Z" fill="#7fe1c3" opacity="0.95" stroke="#39a88a" stroke-width="4"/>
+            <circle cx="565" cy="176" r="42" fill="#f1c7a6"/>
+            <rect x="525" y="220" width="82" height="112" rx="16" fill="#4a90e2"/>
+            <rect x="487" y="228" width="34" height="96" rx="12" fill="#4a90e2"/>
+            <rect x="611" y="228" width="34" height="96" rx="12" fill="#4a90e2"/>
+            <circle cx="503" cy="321" r="14" fill="#f1c7a6"/>
+            <circle cx="628" cy="321" r="14" fill="#f1c7a6"/>
+            <rect x="540" y="332" width="24" height="98" rx="10" fill="#2f4f73"/>
+            <rect x="572" y="332" width="24" height="98" rx="10" fill="#2f4f73"/>
+            <rect x="534" y="428" width="36" height="14" rx="5" fill="#333"/>
+            <rect x="566" y="428" width="36" height="14" rx="5" fill="#333"/>
+            <circle cx="550" cy="169" r="4" fill="#2d2d2d"/>
+            <circle cx="580" cy="169" r="4" fill="#2d2d2d"/>
+            <path d="M550 190 Q565 200 580 190" stroke="#915f45" stroke-width="4" fill="none"/>
+            <text x="500" y="46" text-anchor="middle" font-size="30" font-family="Arial" fill="#29486d" font-weight="bold">OHS Akademija</text>
+            <rect id="haz1" class="hotspot" x="345" y="215" width="88" height="95" rx="12"/>
+            <rect id="haz2" class="hotspot" x="455" y="300" width="140" height="105" rx="14"/>
+            <rect id="haz3" class="hotspot" x="538" y="145" width="55" height="42" rx="8"/>
+          </svg>
+          <div class="legend">Prvi korak: pronađi tri skrivene opasnosti u slici.</div>
+        </div>
+
+        <div class="side-card">
+          <ul class="task-list">
+            <li id="t1">1. Hidden hazards – pronađi 3 opasnosti</li>
+            <li id="t2">2. Decision-based – donesi prvu odluku</li>
+            <li id="t3">3. Matching – izaberi primarnu meru zaštite</li>
+            <li id="t4">4. Score-based – proceni nivo rizika</li>
+            <li id="t5">5. Myth-busting – prepoznaj mit</li>
+            <li id="t6">6. Cause → effect – analiziraj lanac posledica</li>
+            <li id="t7">7. Escape završnica – unesi šifru</li>
+          </ul>
+
+          <div class="message" id="messageBox">Počni tako što ćeš kliknuti na tri opasnosti u slici: otvorena boca hemikalije, prosuta tečnost i rad bez zaštite za oči.</div>
+
+          <div class="task-box" id="box2">
+            <div class="question">Uočio/la si više opasnosti u prostoru. Koji je najzreliji prvi potez?</div>
+            <div class="options">
+              <button class="option-btn task2" data-correct="false">Ignorisati problem dok se zadatak ne završi, da se ne remeti tok rada</button>
+              <button class="option-btn task2" data-correct="true">Obezbediti prostor, upozoriti prisutne i obavestiti nastavnika / odgovorno lice</button>
+              <button class="option-btn task2" data-correct="false">Samostalno rešiti sve odmah bez zaštite i bez konsultacije</button>
+            </div>
+            <div class="feedback" id="fb2"></div>
+          </div>
+
+          <div class="task-box" id="box3">
+            <div class="question">Koja je najvažnija početna mera zaštite za ovu laboratorijsku situaciju?</div>
+            <div class="options">
+              <button class="option-btn task3" data-correct="false">Zaštita za uši</button>
+              <button class="option-btn task3" data-correct="true">Zaštitne naočare i rukavice</button>
+              <button class="option-btn task3" data-correct="false">Sigurnosni pojas</button>
+            </div>
+            <div class="feedback" id="fb3"></div>
+          </div>
+
+          <div class="task-box" id="box4">
+            <div class="question">Kako procenjuješ ukupni rizik u ovoj situaciji, imajući u vidu kombinaciju prosute tečnosti, otvorene boce i rada bez PPE?</div>
+            <div class="options">
+              <button class="option-btn task4" data-correct="false">3 – srednji</button>
+              <button class="option-btn task4" data-correct="true">5 – veoma visok</button>
+              <button class="option-btn task4" data-correct="false">2 – nizak do srednji</button>
+            </div>
+            <div class="feedback" id="fb4"></div>
+          </div>
+
+          <div class="task-box" id="box5">
+            <div class="question">Tačno ili mit: „Ako opasnost još nije izazvala incident, verovatno nije hitna.”</div>
+            <div class="options">
+              <button class="option-btn task5" data-correct="false">Tačno</button>
+              <button class="option-btn task5" data-correct="true">Mit / netačno</button>
+            </div>
+            <div class="feedback" id="fb5"></div>
+          </div>
+
+          <div class="task-box" id="box6">
+            <div class="question">Koji lanac posledica je najrealniji ako se rad nastavi bez zaštite i bez kontrole prosute hemikalije?</div>
+            <div class="options">
+              <button class="option-btn task6" data-correct="false">Bez zaštite → brži rad → manji zastoj → bezbedan ishod</button>
+              <button class="option-btn task6" data-correct="true">Bez kontrole opasnosti → kontakt / klizanje → povreda → prekid rada</button>
+              <button class="option-btn task6" data-correct="false">Bez zaštite → veće iskustvo → bolja kontrola situacije</button>
+            </div>
+            <div class="feedback" id="fb6"></div>
+            <div class="chain" id="chainBox" style="display:none">
+              <div class="chain-step">Nekontrolisana opasnost</div>
+              <div class="arrow">→</div>
+              <div class="chain-step">Kontakt / klizanje</div>
+              <div class="arrow">→</div>
+              <div class="chain-step">Povreda</div>
+              <div class="arrow">→</div>
+              <div class="chain-step">Prekid rada</div>
+            </div>
+          </div>
+
+          <div class="task-box" id="box7">
+            <div class="question">Escape završnica: unesi šifru jednaku broju pronađenih opasnosti + broju netačnih opcija u pitanju o mitu.</div>
+            <div class="pair-grid">
+              <div class="pair-card">Pronađene opasnosti: 3</div>
+              <div class="pair-card">Netačna opcija u mitu: 1</div>
+            </div>
+            <div class="code-display" id="codeDisplay"></div>
+            <div class="mini-grid">
+              <button class="digit-btn" data-digit="2">2</button>
+              <button class="digit-btn" data-digit="3">3</button>
+              <button class="digit-btn" data-digit="4">4</button>
+              <button class="digit-btn" data-digit="5">5</button>
+              <button class="digit-btn" id="clearCode">Obriši</button>
+              <button class="digit-btn" id="submitCode">Potvrdi</button>
+            </div>
+            <div class="feedback" id="fb7"></div>
+          </div>
+
+          <div class="controls">
+            <button id="finishBtn" class="main-btn" disabled>Završi igricu</button>
+            <button id="restartBtn" class="secondary">Igraj ponovo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="resultScreen" class="screen">
+      <div class="result-box">
+        <div class="room-title">🏁 Završni rezultat</div>
+        <div id="finalText" class="message" style="min-height:auto"></div>
+        <div class="rank-box">
+          <div class="room-title">Rang lista</div>
+          <ol class="rank-list">
+            <li>0–3 boda: <strong>Bezbednjak početnik</strong></li>
+            <li>4–5 bodova: <strong>Mladi čuvar bezbednosti</strong></li>
+            <li>6–7 bodova: <strong>Analitičar rizika</strong></li>
+            <li>8–9 bodova: <strong>Bezbednosni strateg</strong></li>
+            <li>10 bodova: <strong>OHS šampion</strong></li>
+          </ol>
+        </div>
+        <div class="controls"><button id="playAgainBtn" class="main-btn">Igraj ponovo</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let score=0, doneCount=0, foundHazards=0, enteredCode="";
+    let tasks={1:false,2:false,3:false,4:false,5:false,6:false,7:false};
+
+    const scoreEl=document.getElementById("score");
+    const doneCountEl=document.getElementById("doneCount");
+    const statusTextEl=document.getElementById("statusText");
+    const messageBox=document.getElementById("messageBox");
+    const finishBtn=document.getElementById("finishBtn");
+    const resultScreen=document.getElementById("resultScreen");
+    const gameScreen=document.getElementById("gameScreen");
+    const codeDisplay=document.getElementById("codeDisplay");
+    const finalText=document.getElementById("finalText");
+
+    function updateTop(){
+      doneCountEl.textContent=doneCount;
+      scoreEl.textContent=score;
+      statusTextEl.textContent=doneCount===7 ? "Spremno za završetak" : "U toku";
+      if(doneCount===7) finishBtn.disabled=false;
+    }
+
+    function markTask(taskNo){
+      if(tasks[taskNo]) return;
+      tasks[taskNo]=true;
+      doneCount++;
+      document.getElementById("t"+taskNo).classList.add("done");
+      updateTop();
+    }
+
+    function getRank(s){
+      if(s<=3) return "Bezbednjak početnik";
+      if(s<=5) return "Mladi čuvar bezbednosti";
+      if(s<=7) return "Analitičar rizika";
+      if(s<=9) return "Bezbednosni strateg";
+      return "OHS šampion";
+    }
+
+    function disableSet(selector){
+      document.querySelectorAll(selector).forEach(btn=>btn.disabled=true);
+    }
+
+    function activateNext(boxId,msg){
+      document.getElementById(boxId).classList.add("active");
+      messageBox.textContent=msg;
+    }
+
+    function handleSimpleTask(selector, fbId, taskNo, correctText, wrongText, nextBoxId, nextMsg, showChain){
+      document.querySelectorAll(selector).forEach(btn=>{
+        btn.addEventListener("click",()=>{
+          if(tasks[taskNo]) return;
+          disableSet(selector);
+          const ok=btn.dataset.correct==="true";
+          const fb=document.getElementById(fbId);
+          if(ok){
+            score++;
+            fb.textContent="✅ Tačno! " + correctText;
+            fb.className="feedback correct";
+          } else {
+            fb.textContent="❌ Netačno. " + wrongText;
+            fb.className="feedback wrong";
+          }
+          if(showChain){ document.getElementById("chainBox").style.display="flex"; }
+          markTask(taskNo);
+          if(nextBoxId){ activateNext(nextBoxId,nextMsg); }
+        });
+      });
+    }
+
+    ["haz1","haz2","haz3"].forEach(id=>{
+      document.getElementById(id).addEventListener("click",()=>{
+        const el=document.getElementById(id);
+        if(el.classList.contains("done")) return;
+        el.classList.add("done");
+        foundHazards++;
+        if(id==="haz1") messageBox.textContent="✅ Pronađena opasnost: otvorena boca hemikalije.";
+        if(id==="haz2") messageBox.textContent="✅ Pronađena opasnost: prosuta tečnost u zoni kretanja.";
+        if(id==="haz3") messageBox.textContent="✅ Pronađena opasnost: rad bez zaštite za oči.";
+        if(foundHazards===3){
+          score+=3;
+          markTask(1);
+          activateNext("box2","Odlično! Završio/la si hidden hazards deo. Sada pređi na donošenje odluke u situaciji.");
+        }
+        updateTop();
+      });
+    });
+
+    handleSimpleTask(".task2","fb2",2,
+      "Najpre se štite ljudi i obezbeđuje prostor, pa se zatim reaguje po proceduri.",
+      "Najzreliji izbor je da obezbediš prostor i uključiš odgovorno lice, a ne da improvizuješ.",
+      "box3","Sledeći korak: izaberi primarnu meru zaštite za ovu situaciju."
+    );
+
+    handleSimpleTask(".task3","fb3",3,
+      "Zaštita za oči i ruke je ovde primarna jer direktno smanjuje izloženost hemikalijama.",
+      "Najadekvatnija početna zaštita su naočare i rukavice, ne zaštita koja nije povezana sa dominantnim rizikom.",
+      "box4","Sada proceni ukupni nivo rizika za prikazanu situaciju."
+    );
+
+    handleSimpleTask(".task4","fb4",4,
+      "Kombinacija više opasnosti i neposredne izloženosti opravdava procenu 5 – veoma visok rizik.",
+      "Najtačnija procena je veoma visok rizik, jer se verovatnoća i posledice međusobno pojačavaju.",
+      "box5","Sledeći korak: myth-busting pitanje."
+    );
+
+    handleSimpleTask(".task5","fb5",5,
+      "Opasnost ne mora da izazove incident da bi bila hitna; bezbednost deluje preventivno.",
+      "To je mit. Čekanje da se incident desi nije bezbednosna logika.",
+      "box6","Prelazimo na simulaciju posledica: izaberi najrealniji lanac ishoda."
+    );
+
+    handleSimpleTask(".task6","fb6",6,
+      "Tačno si povezao/la uzrok, događaj i posledicu. Nekontrolisana opasnost vodi u incident i prekid rada.",
+      "Najrealniji je lanac: nekontrolisana opasnost → kontakt / klizanje → povreda → prekid rada.",
+      "box7","Završni escape korak: izračunaj i unesi šifru.",
+      true
+    );
+
+    document.querySelectorAll("[data-digit]").forEach(btn=>{
+      btn.addEventListener("click",()=>{
+        if(tasks[7]) return;
+        enteredCode=btn.dataset.digit;
+        codeDisplay.textContent=enteredCode;
+      });
+    });
+
+    document.getElementById("clearCode").addEventListener("click",()=>{
+      if(tasks[7]) return;
+      enteredCode="";
+      codeDisplay.textContent="";
+    });
+
+    document.getElementById("submitCode").addEventListener("click",()=>{
+      if(tasks[7]) return;
+      const fb=document.getElementById("fb7");
+      if(enteredCode==="4"){
+        score++;
+        fb.textContent="✅ Tačno! Šifra je 4 (3 pronađene opasnosti + 1 netačna opcija u myth pitanju).";
+        fb.className="feedback correct";
+      } else {
+        fb.textContent="❌ Netačno. Šifra se dobija sabiranjem 3 pronađene opasnosti i 1 netačne opcije u myth pitanju.";
+        fb.className="feedback wrong";
+      }
+      markTask(7);
+      messageBox.textContent="Završio/la si svih 7 tipova zadataka. Klikni na „Završi igricu”.";
+    });
+
+    finishBtn.addEventListener("click",()=>{
+      gameScreen.classList.remove("active");
+      resultScreen.classList.add("active");
+      const rank=getRank(score);
+      let text=`Osvojio/la si <strong>${score}</strong> od maksimalnih <strong>10</strong> bodova. Tvoj rang je: <strong>${rank}</strong>. `;
+      if(score===10) text+="Odlično! Uspešno si prošao/la kroz svih sedam tipova OHS zadataka i pokazao/la zrelo bezbednosno razmišljanje.";
+      else if(score>=8) text+="Vrlo jak rezultat. Dobro povezuješ opažanje opasnosti, procenu rizika, izbor mera i lanac posledica.";
+      else if(score>=6) text+="Dobar rezultat. Već razmišljaš analitički, ali još vežbe može dodatno poboljšati prioritizaciju i procenu složenijih situacija.";
+      else if(score>=4) text+="Solidna osnova. Razumeš bitne koncepte, ali potrebno je još rada na povezivanju više opasnosti u jednu procenu.";
+      else text+="Početni nivo, ali dobar temelj. Ponovni prelazak kroz igricu može pomoći da jasnije vidiš kako se opasnosti, odluke i posledice povezuju.";
+      finalText.innerHTML=text;
+    });
+
+    function resetGame(){
+      score=0; doneCount=0; foundHazards=0; enteredCode="";
+      tasks={1:false,2:false,3:false,4:false,5:false,6:false,7:false};
+      ["t1","t2","t3","t4","t5","t6","t7"].forEach(id=>document.getElementById(id).classList.remove("done"));
+      ["haz1","haz2","haz3"].forEach(id=>document.getElementById(id).classList.remove("done"));
+      ["box2","box3","box4","box5","box6","box7"].forEach(id=>document.getElementById(id).classList.remove("active"));
+      [".task2",".task3",".task4",".task5",".task6"].forEach(sel=>{
+        document.querySelectorAll(sel).forEach(btn=>{ btn.disabled=false; btn.style.background=""; btn.style.color=""; });
+      });
+      ["fb2","fb3","fb4","fb5","fb6","fb7"].forEach(id=>{
+        const el=document.getElementById(id); el.textContent=""; el.className="feedback";
+      });
+      document.getElementById("chainBox").style.display="none";
+      codeDisplay.textContent="";
+      finishBtn.disabled=true;
+      messageBox.textContent="Počni tako što ćeš kliknuti na tri opasnosti u slici: otvorena boca hemikalije, prosuta tečnost i rad bez zaštite za oči.";
+      resultScreen.classList.remove("active");
+      gameScreen.classList.add("active");
+      updateTop();
+    }
+
+    document.getElementById("restartBtn").addEventListener("click",resetGame);
+    document.getElementById("playAgainBtn").addEventListener("click",resetGame);
+    updateTop();
+  </script>
+</body>
+</html>
